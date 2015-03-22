@@ -1,13 +1,18 @@
 final static int NB_OF_VERTICES_2DBOX = 8;
 
-void setup() {
-  size(1000, 1000, P2D);
-}
+//box dimensions
+float xDim = 100;
+float yDim = 150;
+float zDim = 300;
 
 //rotation in function of UP/DOWN/RIGHT/LEFT arrow keys pressed
 float xRotation = 0.0;
 float yRotation = 0.0;
 float rotFactor = PI/32.0;
+
+void setup() {
+  size(1000, 1000, P2D);
+}
 
 void keyPressed() {
   if(key == CODED) {
@@ -186,8 +191,8 @@ My3DBox transformBox(My3DBox box, float[][] transformMat) {
 void draw() {
   background(255, 255, 255);
   Custom3DPoint eye = new Custom3DPoint(0, 0, -5000);
-  Custom3DPoint origin  = new Custom3DPoint(-50, -75, -150);
-  My3DBox input3DBox = new My3DBox(origin, 100, 150, 300);
+  Custom3DPoint origin  = new Custom3DPoint(-xDim/2.0, -yDim/2.0, -zDim/2.0);
+  My3DBox input3DBox = new My3DBox(origin, xDim, yDim, zDim);
   
   //rotating with keys UP/DOWN/RIGHT/LEFT arrows
   float[][] rotateXArrows = rotateXMatrix(xRotation);
