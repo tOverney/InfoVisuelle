@@ -4,26 +4,10 @@ void setup() {
   size(1000, 1000, P2D);
 }
 
-//scaling following the mouse
-float scale = 1.0;
-float scalingFactor = 0.1;
-float oldMouseY = mouseY;
-
 //rotation in function of UP/DOWN/RIGHT/LEFT arrow keys pressed
 float xRotation = 0.0;
 float yRotation = 0.0;
 float rotFactor = PI/32.0;
-
-void mouseDragged() {
-  if(oldMouseY - mouseY > 0.0) {
-    //dragged down
-    scale -= scalingFactor;
-  } else if(oldMouseY - mouseY < 0.0) {
-    //dragged up
-    scale += scalingFactor;
-  }
-  oldMouseY = mouseY;
-}
 
 void keyPressed() {
   if(key == CODED) {
@@ -31,7 +15,9 @@ void keyPressed() {
       xRotation += rotFactor;
     } else if(keyCode == DOWN) {
       xRotation -= rotFactor;
-    } else if(keyCode == RIGHT) {
+    }
+    
+    if(keyCode == RIGHT) {
       yRotation -= rotFactor;
     } else if(keyCode == LEFT) {
       yRotation += rotFactor;
