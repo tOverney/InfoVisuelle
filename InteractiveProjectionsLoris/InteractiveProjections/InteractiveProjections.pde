@@ -200,12 +200,8 @@ My3DBox transformBox(My3DBox box, float[][] transformMat) {
 void draw() {
   background(255, 255, 255);
   Custom3DPoint eye = new Custom3DPoint(0, 0, -5000);
-  Custom3DPoint origin  = new Custom3DPoint(0, 0, 0);
+  Custom3DPoint origin  = new Custom3DPoint(-50, -75, -150);
   My3DBox input3DBox = new My3DBox(origin, 100, 150, 300);
-  
-  //scaling with mouse up/down
-  float[][] scaleOnMouse = scaleMatrix(scale,scale,scale);
-  input3DBox = transformBox(input3DBox, scaleOnMouse);
   
   //rotating with keys UP/DOWN/RIGHT/LEFT arrows
   float[][] rotateXArrows = rotateXMatrix(xRotation);
@@ -218,7 +214,7 @@ void draw() {
   float[][] transform = rotateXMatrix(PI/8.0);
   input3DBox = transformBox(input3DBox, transform);
  
-  transform = translationMatrix(200, 200, 0);
+  transform = translationMatrix(250, 250, 0);
   input3DBox = transformBox(input3DBox, transform);
   
   //default scale
