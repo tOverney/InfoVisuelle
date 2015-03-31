@@ -11,6 +11,7 @@ void setup() {
     noStroke();
     field = new GameField(FIELD_DIMENSION, FIELD_THICKNESS);
     sphere = new Sphere(SPHERE_RADIUS);
+    loadCylinderModel();
 }
 
 void draw() {
