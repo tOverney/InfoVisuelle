@@ -279,15 +279,11 @@ class HScrollbar {
      * @brief Updates the state of the scrollbar according to the mouse movement
      */
     public void update() {
-        if (isMouseOver()) {
-            mouseOver = true;
-        } else {
-            mouseOver = false;
+        mouseOver = isMouseOver();
+        if (mousePressed) {
+            locked = mouseOver;
         }
-        if (mousePressed && mouseOver) {
-            locked = true;
-        }
-        if (!mousePressed) {
+        else {
             locked = false;
         }
         if (locked) {
