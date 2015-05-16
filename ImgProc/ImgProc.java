@@ -318,12 +318,8 @@ class HScrollbar {
      * @return Whether the mouse is hovering the scrollbar
      */
     public boolean isMouseOver() {
-        if (mouseX > xPosition && mouseX < xPosition + barWidth
-            && mouseY > yPosition && mouseY < yPosition + barHeight) {
-            return true;
-        } else {
-            return false;
-        }
+        return mouseX > xPosition && mouseX < xPosition + barWidth
+            && mouseY > yPosition && mouseY < yPosition + barHeight;
     }
 
     /**
