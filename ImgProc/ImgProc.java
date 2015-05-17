@@ -22,11 +22,13 @@ float thresholdUp = 130.0f;
 int width = 1500;
 int height = 375;
 
-int imgWidth = 500;
+int imgWidth = width / 3;
 int imgHeight = 375;
 
 float discretizationStepsPhi = 0.06f;
 float discretizationStepsR = 2.5f;
+
+String imageFolder = "boardImages/";
 
 float[] cosTable;
 float[] sinTable;
@@ -38,7 +40,7 @@ int phiDim, rDim, rMax;
 
 public void setup() {
     size(width, height);
-    img = loadImage("board1.jpg");
+    img = loadImage(imageFolder + "board1.jpg");
     phiDim = (int) (Math.PI / discretizationStepsPhi);
     rDim = (int) (((img.width + img.height) * 2 + 1) / discretizationStepsR);
     rMax = (int) Math.round(sqrt(pow(img.height, 2) + pow(img.width, 2)) / discretizationStepsR);
@@ -63,20 +65,16 @@ public void draw() {
     result = gaussianBlur(result);
     sobel = sobel(result);
 
-    PImage sobelDisp = createImage(imgWidth, imgHeight, RGB);;
-    sobelDisp.copy(sobel, 0, 0, sobel.width, sobel.height,
-                          0, 0, imgWidth, imgHeight);
-    image(sobelDisp, 0, 0);
+    sobel.resize(imgWidth, imgHeight);
+    image(sobel, 0, 0);
 
     int[] houghAcc = hough(sobel);
     PImage houghVisualisation = houghAccumulator(houghAcc);
     image(houghVisualisation, imgWidth, 0);
-
+    
+    img.resize(imgWidth, imgHeight);
+    image(img, 2 * imgWidth, 0);
     computeLines(sobel, houghAcc);
-    result.copy(img, 0, 0, sobel.width, sobel.height,
-                     0, 0, imgWidth, imgHeight);
-    result.resize(imgWidth, imgHeight);
-    image(result, 2 * imgWidth, 0);
 }
 
 public PImage sobel(PImage img) {
