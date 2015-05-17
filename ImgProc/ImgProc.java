@@ -60,10 +60,10 @@ public void draw() {
     result = gaussianBlur(result);
     sobel = sobel(result);
 
-    image(sobel, 0, 0);
+    //image(sobel, 0, 0);
 
     result = hough(sobel);
-
+    println(rDim + " " + phiDim);
     image(result, 0, 0);
 }
 
@@ -151,50 +151,50 @@ public PImage hough(PImage edges) {
         }
     }
 
-    // return houghAccumulator(rDim, phiDim, accumulator);
+     return houghAccumulator(rDim, phiDim, accumulator);
 
-    for (int idx = 0; idx < accumulator.length; idx++) {
-        if (accumulator[idx] > 20) {
-            int accPhi = (int) (idx / (rDim + 2)) - 1;
-            int accR = idx - (accPhi + 1) * (rDim + 2) -1;
-            float r = (accR - (rDim - 1) * 0.5f) * discretizationStepsR;
-            float phi = accPhi * discretizationStepsPhi;
+    // for (int idx = 0; idx < accumulator.length; idx++) {
+    //     if (accumulator[idx] > 20) {
+    //         int accPhi = (int) (idx / (rDim + 2)) - 1;
+    //         int accR = idx - (accPhi + 1) * (rDim + 2) -1;
+    //         float r = (accR - (rDim - 1) * 0.5f) * discretizationStepsR;
+    //         float phi = accPhi * discretizationStepsPhi;
 
-            int x0 = 0;
-            int y0 = (int) (r / sin(phi));
-            int x1 = (int) (r / cos(phi));
-            int y1 = 0;
-            int x2 = edges.width;
-            int y2 = (int) (-cos(phi) / sin(phi) * x2 + r / sin(phi));
-            int y3 = edges.width;
-            int x3 = (int) (- (y3 - r / sin(phi)) * (sin(phi) / cos(phi)));
+    //         int x0 = 0;
+    //         int y0 = (int) (r / sin(phi));
+    //         int x1 = (int) (r / cos(phi));
+    //         int y1 = 0;
+    //         int x2 = edges.width;
+    //         int y2 = (int) (-cos(phi) / sin(phi) * x2 + r / sin(phi));
+    //         int y3 = edges.width;
+    //         int x3 = (int) (- (y3 - r / sin(phi)) * (sin(phi) / cos(phi)));
 
-            stroke(204, 102, 0);
+    //         stroke(204, 102, 0);
 
-            if (y0 > 0) {
-                if (x1 > 0)
-                    line(x0, y0, x1, y1);
-                else if (y2 > 0)
-                    line(x0, y0, x2, y2);
-                else
-                    line (x0, y0, x3, y3);
-            }
-            else {
-                if (x1 > 0) {
-                    if (y2 > 0)
-                        line(x1, y1, x2, y2);
-                    else
-                        line(x1, y1, x3, y3);
-                }
-                else
-                    line(x2, y2, x3, y3);
-            }
-        }
-    }
+    //         if (y0 > 0) {
+    //             if (x1 > 0)
+    //                 line(x0, y0, x1, y1);
+    //             else if (y2 > 0)
+    //                 line(x0, y0, x2, y2);
+    //             else
+    //                 line (x0, y0, x3, y3);
+    //         }
+    //         else {
+    //             if (x1 > 0) {
+    //                 if (y2 > 0)
+    //                     line(x1, y1, x2, y2);
+    //                 else
+    //                     line(x1, y1, x3, y3);
+    //             }
+    //             else
+    //                 line(x2, y2, x3, y3);
+    //         }
+    //     }
+    // }
 
-    h.updatePixels();
+    // h.updatePixels();
 
-    return h;
+    // return h;
 }
 
 public PImage gaussianBlur(PImage img) {
