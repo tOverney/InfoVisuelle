@@ -1,7 +1,7 @@
-import processing.core.*; 
-import processing.data.*; 
-import processing.event.*; 
-import processing.opengl.*; 
+import processing.core.*;
+import processing.data.*;
+import processing.event.*;
+import processing.opengl.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +47,7 @@ public class ImageProcessing extends PApplet {
         phiDim = (int) (Math.PI / discretizationStepsPhi);
         rDim = (int) (((img.width + img.height) * 2 + 1)
             / discretizationStepsR);
-        rMax = (int) Math.round(sqrt(pow(img.height, 2) 
+        rMax = (int) Math.round(sqrt(pow(img.height, 2)
             + pow(img.width, 2)) / discretizationStepsR);
         initTrigoTables();
     }
@@ -76,7 +76,7 @@ public class ImageProcessing extends PApplet {
         int[] houghAcc = hough(sobel);
         PImage houghVisualisation = houghAccumulator(houghAcc);
         image(houghVisualisation, imgWidth, 0);
-        
+
         img.resize(imgWidth, imgHeight);
         image(img, 2 * imgWidth, 0);
         ArrayList<PVector> candidates = computeLines(lignesLimit, houghAcc);
@@ -116,7 +116,7 @@ public class ImageProcessing extends PApplet {
         return result;
     }
 
-    public float convoluteSobel(PImage img, 
+    public float convoluteSobel(PImage img,
         float[][][] kernel, float[] buffer) {
 
         float intensity = 0.0f;
@@ -165,7 +165,7 @@ public class ImageProcessing extends PApplet {
                     for (int accPhi = 0; accPhi < phiDim; accPhi++) {
                         float r = x * cosTable[accPhi] + y * sinTable[accPhi];
                         float accR = r / discretizationStepsR + (rDim - 1) * 0.5f;
-                        accumulator[round((accPhi + 1) 
+                        accumulator[round((accPhi + 1)
                             * (rDim + 2) + accR + 1)] += 1;
                     }
                 }
@@ -181,23 +181,23 @@ public class ImageProcessing extends PApplet {
 
         ArrayList<Integer> bestCandidates = new ArrayList<Integer>();
 
-        
+
         for (int accR = 0; accR < rDim; accR++) {
             for (int accPhi = 0; accPhi < phiDim; accPhi++) {
             // compute current index in the accumulator
                 int idx = (accPhi + 1) * (rDim + 2) + accR + 1;
                 if (accumulator[idx] > minVotes) {
-                    
+
                     boolean bestCandidate=true;
-                    
+
                     // iterate over the neighbourhood
-                    for(int dPhi=-neighbourhood/2; dPhi < neighbourhood/2+1; dPhi++) { 
+                    for(int dPhi=-neighbourhood/2; dPhi < neighbourhood/2+1; dPhi++) {
                         // check we are not outside the image
                         if( accPhi+dPhi < 0 || accPhi+dPhi >= phiDim) continue;
                         for(int dR=-neighbourhood/2; dR < neighbourhood/2 +1; dR++) {
                             // check we are not outside the image
                             if(accR+dR < 0 || accR+dR >= rDim) continue;
-                            
+
                             int neighbourIdx = (accPhi + dPhi + 1) * (rDim + 2) + accR + dR + 1;
                             if(accumulator[idx] < accumulator[neighbourIdx]) {
                                 // the current idx is not a local maximum! bestCandidate=false;
@@ -235,10 +235,10 @@ public class ImageProcessing extends PApplet {
 
         for (int i = 0; i < lines.size() - 1; i++) {
             PVector line1 = lines.get(i);
-            
+
             for (int j = i + 1; j < lines.size(); j++) {
                 PVector line2 = lines.get(j);
-                
+
                 // compute the intersection and add it to 'intersections'
                 float d = cos(line2.y) * sin(line1.y) - cos(line1.y) * sin(line2.y);
                 float x = (line2.x * sin(line1.y) - line1.x * sin(line2.y)) / d;
@@ -319,9 +319,9 @@ public class ImageProcessing extends PApplet {
             float s = saturation(img.pixels[i]);
             float b = brightness(img.pixels[i]);
 
-            if ((h > 110 && h < 135) &&
-                (s > 70 && s < 180) &&
-                (b > 70 && b < 160)) {
+            if ((h > 100 && h < 135) &&
+                (s > 128) &&
+                (b > 10 && b < 135)) {
                 result.pixels[i] = color(255);
             }
             else {
