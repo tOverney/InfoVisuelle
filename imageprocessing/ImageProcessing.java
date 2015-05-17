@@ -6,10 +6,11 @@ import processing.opengl.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collections;
+import java.util.Random;
 
 public class ImageProcessing extends PApplet {
 
-    HoughComparator hCompare;
+    QuadGraph qGraph = new QuadGraph();
 
     PImage img;
 
@@ -30,7 +31,7 @@ public class ImageProcessing extends PApplet {
     float discretizationStepsR = 2.5f;
 
     String imageFolder = "boardImages/";
-    String imageName = "board1";
+    String imageName = "board4";
     String imageFormat = ".jpg";
 
     float[] cosTable;
@@ -82,6 +83,11 @@ public class ImageProcessing extends PApplet {
         ArrayList<PVector> candidates = computeLines(lignesLimit, houghAcc);
 
         translate(2 * imgWidth, 0);
+        qGraph.build(candidates, sobel.width, sobel.height);
+        List<int[]> quadsRaw = qGraph.findCycles();
+        ArrayList<PVector[]> quads = buildCleanQuadList(candidates, quadsRaw);
+        // displayQuads(quads); // uncomment if you want to see the quads!
+
         getIntersections(candidates);
         plotLines(sobel, candidates);
     }
@@ -240,17 +246,64 @@ public class ImageProcessing extends PApplet {
                 PVector line2 = lines.get(j);
 
                 // compute the intersection and add it to 'intersections'
-                float d = cos(line2.y) * sin(line1.y) - cos(line1.y) * sin(line2.y);
-                float x = (line2.x * sin(line1.y) - line1.x * sin(line2.y)) / d;
-                float y = (-line2.x * cos(line1.y) + line1.x * cos(line2.y)) / d;
+                
+                PVector point = intersection(line1, line2);
 
-                intersections.add(new PVector(x, y));
+                intersections.add(point);
                 // draw the intersection
                 fill(255, 128, 0);
-                ellipse(x, y, 10, 10);
+                ellipse(point.x, point.y, 10, 10);
             }
         }
         return intersections;
+    }
+
+    public PVector intersection(PVector line1, PVector line2) {
+        float d = cos(line2.y) * sin(line1.y) - cos(line1.y) * sin(line2.y);
+        float x = (line2.x * sin(line1.y) - line1.x * sin(line2.y)) / d;
+        float y = (-line2.x * cos(line1.y) + line1.x * cos(line2.y)) / d;
+
+        return new PVector(x, y);
+    }
+
+    public ArrayList<PVector[]> buildCleanQuadList(ArrayList<PVector> lines, List<int[]> quads) {
+        ArrayList<PVector[]> cleanedQuads = new ArrayList<PVector[]>();
+
+        for (int[] quad : quads) {
+            if(quad.length == 4) {
+                PVector l1 = lines.get(quad[0]);
+                PVector l2 = lines.get(quad[1]);
+                PVector l3 = lines.get(quad[2]);
+                PVector l4 = lines.get(quad[3]);
+                // (intersection() is a simplified version of the
+                // intersections() method you wrote last week, that simply
+                // return the coordinates of the intersection between 2 lines)
+                PVector c12 = intersection(l1, l2);
+                PVector c23 = intersection(l2, l3);
+                PVector c34 = intersection(l3, l4);
+                PVector c41 = intersection(l4, l1);
+
+                /* there is a problem with these method calls ... 
+                if(qGraph.isConvex(c12, c23, c34, c41) &&
+                    qGraph.nonFlatQuad(c12, c23, c34, c41)) { */
+                PVector[] validQuad = {c12, c23, c34, c41}; 
+                cleanedQuads.add(validQuad);
+            }
+        }
+
+        return cleanedQuads;
+    } 
+
+    public void displayQuads(ArrayList<PVector[]> quads) {
+        for (PVector[] quad : quads) {
+            // Choose a random, semi-transparent colour
+            Random random = new Random();
+            fill(color(min(255, random.nextInt(300)),
+                min(255, random.nextInt(300)),
+                min(255, random.nextInt(300)), 50));
+            quad(quad[0].x, quad[0].y, quad[1].x, quad[1].y,
+                 quad[2].x, quad[2].y, quad[3].x, quad[3].y);
+        }
     }
 
 
