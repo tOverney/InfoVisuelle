@@ -19,8 +19,11 @@ PImage img;
 float thresholdDown = 110.0f;
 float thresholdUp = 130.0f;
 
-int width = 800;
-int height = 600;
+int width = 1500;
+int height = 375;
+
+int imgWidth = 500;
+int imgHeight = 375;
 
 float discretizationStepsPhi = 0.06f;
 float discretizationStepsR = 2.5f;
@@ -35,7 +38,7 @@ int phiDim, rDim, rMax;
 
 public void setup() {
     size(width, height);
-    img = loadImage("board4.jpg");
+    img = loadImage("board1.jpg");
     phiDim = (int) (Math.PI / discretizationStepsPhi);
     rDim = (int) (((img.width + img.height) * 2 + 1) / discretizationStepsR);
     rMax = (int) Math.round(sqrt(pow(img.height, 2) + pow(img.width, 2)) / discretizationStepsR);
@@ -53,18 +56,27 @@ public void initTrigoTables() {
 }
 
 public void draw() {
-    PImage result = createImage(width, height, RGB);
+    PImage result = createImage(imgWidth, imgHeight, RGB);
     PImage sobel;
 
     result = hueThreshold(img);
     result = gaussianBlur(result);
     sobel = sobel(result);
 
-    //image(sobel, 0, 0);
+    PImage sobelDisp = createImage(imgWidth, imgHeight, RGB);;
+    sobelDisp.copy(sobel, 0, 0, sobel.width, sobel.height,
+                          0, 0, imgWidth, imgHeight);
+    image(sobelDisp, 0, 0);
 
-    result = hough(sobel);
-    println(rDim + " " + phiDim);
-    image(result, 0, 0);
+    int[] houghAcc = hough(sobel);
+    PImage houghVisualisation = houghAccumulator(houghAcc);
+    image(houghVisualisation, imgWidth, 0);
+
+    computeLines(sobel, houghAcc);
+    result.copy(img, 0, 0, sobel.width, sobel.height,
+                     0, 0, imgWidth, imgHeight);
+    result.resize(imgWidth, imgHeight);
+    image(result, 2 * imgWidth, 0);
 }
 
 public PImage sobel(PImage img) {
@@ -112,7 +124,7 @@ public float convoluteSobel(PImage img, float[][][] kernel, float[] buffer) {
             }
 
             intensity = sqrt(pow(sum[0], 2) + pow(sum[1], 2));
-            int currentIndex = x + y * width;
+            int currentIndex = x + y * img.width;
             buffer[currentIndex] = intensity;
             max = buffer[currentIndex] > max ? buffer[currentIndex] : max;
         }
@@ -121,7 +133,7 @@ public float convoluteSobel(PImage img, float[][][] kernel, float[] buffer) {
     return max;
 }
 
-public PImage houghAccumulator(int rDim, int phiDim, int[] acc) {
+public PImage houghAccumulator(int[] acc) {
     PImage hough = createImage(rDim + 2, phiDim + 2, ALPHA);
 
     for (int i = 0; i < acc.length; i++) {
@@ -129,72 +141,80 @@ public PImage houghAccumulator(int rDim, int phiDim, int[] acc) {
     }
 
     hough.updatePixels();
+    hough.resize(imgWidth, imgHeight);
 
     return hough;
 }
 
-public PImage hough(PImage edges) {
+public int[] hough(PImage edges) {
     float maxRadius = sqrt(pow(edges.width, 2) + pow(edges.height, 2));
 
     int[] accumulator = new int[(phiDim + 2) * (rDim + 2)];
-    PImage h = createImage(rDim + 2, phiDim + 2, ALPHA);
 
     for (int y = 0; y < edges.height; y++) {
         for (int x = 0 ; x < edges.width; x++) {
-            if (brightness(edges.pixels[y * edges.height + x]) != 0) {
+            if (brightness(edges.pixels[y * edges.width + x]) != 0) {
                 for (int accPhi = 0; accPhi < phiDim; accPhi++) {
                     float r = x * cosTable[accPhi] + y * sinTable[accPhi];
                     float accR = r / discretizationStepsR + (rDim - 1) * 0.5f;
-                    accumulator[(int) ((accPhi + 1) * (rDim + 2) + accR + 1)] += 1;
+                    accumulator[round((accPhi + 1) * (rDim + 2) + accR + 1)] += 1;
                 }
             }
         }
     }
 
-     return houghAccumulator(rDim, phiDim, accumulator);
+    return accumulator;
+}
 
-    // for (int idx = 0; idx < accumulator.length; idx++) {
-    //     if (accumulator[idx] > 20) {
-    //         int accPhi = (int) (idx / (rDim + 2)) - 1;
-    //         int accR = idx - (accPhi + 1) * (rDim + 2) -1;
-    //         float r = (accR - (rDim - 1) * 0.5f) * discretizationStepsR;
-    //         float phi = accPhi * discretizationStepsPhi;
+public void computeLines(PImage edges, int[] accumulator) {
 
-    //         int x0 = 0;
-    //         int y0 = (int) (r / sin(phi));
-    //         int x1 = (int) (r / cos(phi));
-    //         int y1 = 0;
-    //         int x2 = edges.width;
-    //         int y2 = (int) (-cos(phi) / sin(phi) * x2 + r / sin(phi));
-    //         int y3 = edges.width;
-    //         int x3 = (int) (- (y3 - r / sin(phi)) * (sin(phi) / cos(phi)));
+    //PImage h = createImage(rDim + 2, phiDim + 2, ALPHA);
+    int count = 0;
 
-    //         stroke(204, 102, 0);
+    translate(2 * imgWidth, 0);
 
-    //         if (y0 > 0) {
-    //             if (x1 > 0)
-    //                 line(x0, y0, x1, y1);
-    //             else if (y2 > 0)
-    //                 line(x0, y0, x2, y2);
-    //             else
-    //                 line (x0, y0, x3, y3);
-    //         }
-    //         else {
-    //             if (x1 > 0) {
-    //                 if (y2 > 0)
-    //                     line(x1, y1, x2, y2);
-    //                 else
-    //                     line(x1, y1, x3, y3);
-    //             }
-    //             else
-    //                 line(x2, y2, x3, y3);
-    //         }
-    //     }
-    // }
+    for (int idx = 0; idx < accumulator.length; idx++) {
+        if (accumulator[idx] > 200) {
+            count ++;
+            int accPhi = (int) (idx / (rDim + 2)) - 1;
+            int accR = idx - (accPhi + 1) * (rDim + 2) -1;
+            float r = (accR - (rDim - 1) * 0.5f) * discretizationStepsR;
+            float phi = accPhi * discretizationStepsPhi;
 
-    // h.updatePixels();
+            int x0 = 0;
+            int y0 = (int) (r / sin(phi));
+            int x1 = (int) (r / cos(phi));
+            int y1 = 0;
+            int x2 = edges.width;
+            int y2 = (int) (-cos(phi) / sin(phi) * x2 + r / sin(phi));
+            int y3 = edges.width;
+            int x3 = (int) (- (y3 - r / sin(phi)) * (sin(phi) / cos(phi)));
 
-    // return h;
+            stroke(204, 102, 0);
+
+            if (y0 > 0) {
+                if (x1 > 0)
+                    line(x0, y0, x1, y1);
+                else if (y2 > 0)
+                    line(x0, y0, x2, y2);
+                else
+                    line (x0, y0, x3, y3);
+            }
+            else {
+                if (x1 > 0) {
+                    if (y2 > 0)
+                        line(x1, y1, x2, y2);
+                    else
+                        line(x1, y1, x3, y3);
+                }
+                else
+                    line(x2, y2, x3, y3);
+            }
+        }
+    }
+    //h.updatePixels();
+
+    //return h;
 }
 
 public PImage gaussianBlur(PImage img) {
