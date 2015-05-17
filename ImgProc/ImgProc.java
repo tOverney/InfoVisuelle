@@ -25,13 +25,31 @@ int height = 600;
 float discretizationStepsPhi = 0.06f;
 float discretizationStepsR = 2.5f;
 
+float[] cosTable;
+float[] sinTable;
+
+int phiDim, rDim, rMax;
 
 // HScrollbar lower = new HScrollbar(0, 580 + 100, width, 20);
 // HScrollbar upper = new HScrollbar(0, 530 + 100, width, 20);
 
 public void setup() {
     size(width, height);
-    img = loadImage("board1.jpg");
+    img = loadImage("board4.jpg");
+    phiDim = (int) (Math.PI / discretizationStepsPhi);
+    rDim = (int) (((img.width + img.height) * 2 + 1) / discretizationStepsR);
+    rMax = (int) Math.round(sqrt(pow(img.height, 2) + pow(img.width, 2)) / discretizationStepsR);
+    initTrigoTables();
+}
+
+public void initTrigoTables() {
+    cosTable = new float[phiDim];
+    sinTable = new float[phiDim];
+
+    for (int i = 0; i < phiDim; i += 1) {
+            cosTable[i] = (float) Math.cos(i * discretizationStepsPhi);
+            sinTable[i] = (float) Math.sin(i * discretizationStepsPhi);
+    }
 }
 
 public void draw() {
@@ -45,6 +63,8 @@ public void draw() {
     image(sobel, 0, 0);
 
     result = hough(sobel);
+
+    image(result, 0, 0);
 }
 
 public PImage sobel(PImage img) {
@@ -57,16 +77,15 @@ public PImage sobel(PImage img) {
 
     float[][][] allKernels = { hKernel, vKernel };
 
-    PImage result;
+    PImage result = createImage(img.width, img.height, ALPHA);
 
     float[] buffer = new float[img.width * img.height];
-    float max = 80.0f;
 
-    result = convoluteSobel(img, allKernels, buffer);
+    float max = convoluteSobel(img, allKernels, buffer);
 
     for (int y = 2; y < img.height - 2; y++) {
         for (int x = 2; x < img.width - 2; x++) {
-            if (buffer[y * img.width + x] > max) {
+            if (buffer[y * img.width + x] > max * 0.25f) {
                 result.set(x, y, color(255));
             }
             else {
@@ -76,6 +95,30 @@ public PImage sobel(PImage img) {
     }
 
     return result;
+}
+
+public float convoluteSobel(PImage img, float[][][] kernel, float[] buffer) {
+
+    float intensity = 0.0f;
+    float[] sum = new float[2];
+    float max = 0.0f;
+
+
+    for (int x = 1; x < img.width - 1; x++) {
+        for (int y = 1; y < img.height - 1; y++) {
+            for (int i = 0; i < kernel.length; i++) {
+                intensity = convoluteKernel(img, kernel[i], x, y);
+                sum[i] = intensity;
+            }
+
+            intensity = sqrt(pow(sum[0], 2) + pow(sum[1], 2));
+            int currentIndex = x + y * width;
+            buffer[currentIndex] = intensity;
+            max = buffer[currentIndex] > max ? buffer[currentIndex] : max;
+        }
+    }
+
+    return max;
 }
 
 public PImage houghAccumulator(int rDim, int phiDim, int[] acc) {
@@ -93,10 +136,6 @@ public PImage houghAccumulator(int rDim, int phiDim, int[] acc) {
 public PImage hough(PImage edges) {
     float maxRadius = sqrt(pow(edges.width, 2) + pow(edges.height, 2));
 
-    int phiDim = (int) (Math.PI / discretizationStepsPhi);
-    int rDim = (int) (((edges.width + edges.height) * 2 + 1) / discretizationStepsR);
-    int rMax = (int) Math.round(sqrt(pow(edges.height, 2) + pow(edges.width, 2)) / discretizationStepsR);
-
     int[] accumulator = new int[(phiDim + 2) * (rDim + 2)];
     PImage h = createImage(rDim + 2, phiDim + 2, ALPHA);
 
@@ -104,7 +143,9 @@ public PImage hough(PImage edges) {
         for (int x = 0 ; x < edges.width; x++) {
             if (brightness(edges.pixels[y * edges.height + x]) != 0) {
                 for (int accPhi = 0; accPhi < phiDim; accPhi++) {
-                    //TODO: compute polar coordinate for every line at this pixel
+                    float r = x * cosTable[accPhi] + y * sinTable[accPhi];
+                    float accR = r / discretizationStepsR + (rDim - 1) * 0.5f;
+                    accumulator[(int) ((accPhi + 1) * (rDim + 2) + accR + 1)] += 1;
                 }
             }
         }
@@ -181,7 +222,7 @@ public PImage hueThreshold(PImage img) {
         float b = brightness(img.pixels[i]);
 
         if ((h > 110 && h < 135) &&
-            (s > 70 && s < 160) &&
+            (s > 70 && s < 180) &&
             (b > 70 && b < 160)) {
             result.pixels[i] = color(255);
         }
@@ -193,32 +234,9 @@ public PImage hueThreshold(PImage img) {
     return result;
 }
 
-public PImage convoluteSobel(PImage img, float[][][] kernel, float[] buffer) {
-    PImage result = createImage(img.width, img.height, ALPHA);
-
-    float intensity = 0.0f;
-    float[] sum = new float[2];
-
-
-    for (int x = 1; x < img.width - 1; x++) {
-        for (int y = 1; y < img.height - 1; y++) {
-            for (int i = 0; i < kernel.length; i++) {
-                intensity = convoluteKernel(img, kernel[i], x, y);
-                sum[i] = intensity;
-            }
-
-            intensity = sqrt(pow(sum[0], 2) + pow(sum[1], 2));
-            buffer[x + y * width] = intensity;
-        }
-    }
-
-    return result;
-}
-
 public float convoluteKernel(PImage img, float[][] kernel, int x, int y) {
-    float intensity;
 
-    intensity = brightness(img.pixels[(x - 1) + (y - 1) * img.width])
+    float intensity = brightness(img.pixels[(x - 1) + (y - 1) * img.width])
         * kernel[0][0];
     intensity += brightness(img.pixels[(x - 1) + y * img.width])
         * kernel[0][1];
@@ -239,6 +257,7 @@ public float convoluteKernel(PImage img, float[][] kernel, int x, int y) {
 
     return intensity;
 }
+
 class HScrollbar {
     float barWidth; // Bar's width in pixels
     float barHeight; // Bar's height in pixels
