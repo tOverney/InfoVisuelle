@@ -3,14 +3,9 @@ import processing.data.*;
 import processing.event.*; 
 import processing.opengl.*; 
 
-import java.util.HashMap; 
-import java.util.ArrayList; 
-import java.io.File; 
-import java.io.BufferedReader; 
-import java.io.PrintWriter; 
-import java.io.InputStream; 
-import java.io.OutputStream; 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Collections;
 
 public class ImageProcessing extends PApplet {
 
@@ -24,6 +19,10 @@ public class ImageProcessing extends PApplet {
     int width = 1500;
     int height = 375;
 
+    int neighbourhood = 10;
+    int minVotes = 160;
+    int lignesLimit = 6;
+
     int imgWidth = width / 3;
     int imgHeight = 375;
 
@@ -31,6 +30,8 @@ public class ImageProcessing extends PApplet {
     float discretizationStepsR = 2.5f;
 
     String imageFolder = "boardImages/";
+    String imageName = "board1";
+    String imageFormat = ".jpg";
 
     float[] cosTable;
     float[] sinTable;
@@ -42,7 +43,7 @@ public class ImageProcessing extends PApplet {
 
     public void setup() {
         size(width, height);
-        img = loadImage(imageFolder + "board1.jpg");
+        img = loadImage(imageFolder + imageName + imageFormat);
         phiDim = (int) (Math.PI / discretizationStepsPhi);
         rDim = (int) (((img.width + img.height) * 2 + 1)
             / discretizationStepsR);
@@ -78,7 +79,11 @@ public class ImageProcessing extends PApplet {
         
         img.resize(imgWidth, imgHeight);
         image(img, 2 * imgWidth, 0);
-        computeLines(sobel, houghAcc);
+        ArrayList<PVector> candidates = computeLines(lignesLimit, houghAcc);
+
+        translate(2 * imgWidth, 0);
+        getIntersections(candidates);
+        plotLines(sobel, candidates);
     }
 
     public PImage sobel(PImage img) {
@@ -170,50 +175,118 @@ public class ImageProcessing extends PApplet {
         return accumulator;
     }
 
-    public void computeLines(PImage edges, int[] accumulator) {
+    public ArrayList<PVector> computeLines(int nLines, int[] accumulator) {
 
         //PImage h = createImage(rDim + 2, phiDim + 2, ALPHA);
-        int count = 0;
 
-        translate(2 * imgWidth, 0);
+        ArrayList<Integer> bestCandidates = new ArrayList<Integer>();
 
-        for (int idx = 0; idx < accumulator.length; idx++) {
-            if (accumulator[idx] > 200) {
-                count ++;
-                int accPhi = (int) (idx / (rDim + 2)) - 1;
-                int accR = idx - (accPhi + 1) * (rDim + 2) -1;
-                float r = (accR - (rDim - 1) * 0.5f) * discretizationStepsR;
-                float phi = accPhi * discretizationStepsPhi;
-
-                int x0 = 0;
-                int y0 = (int) (r / sin(phi));
-                int x1 = (int) (r / cos(phi));
-                int y1 = 0;
-                int x2 = edges.width;
-                int y2 = (int) (-cos(phi) / sin(phi) * x2 + r / sin(phi));
-                int y3 = edges.width;
-                int x3 = (int) (- (y3 - r / sin(phi)) * (sin(phi) / cos(phi)));
-
-                stroke(204, 102, 0);
-
-                if (y0 > 0) {
-                    if (x1 > 0)
-                        line(x0, y0, x1, y1);
-                    else if (y2 > 0)
-                        line(x0, y0, x2, y2);
-                    else
-                        line (x0, y0, x3, y3);
-                }
-                else {
-                    if (x1 > 0) {
-                        if (y2 > 0)
-                            line(x1, y1, x2, y2);
-                        else
-                            line(x1, y1, x3, y3);
+        
+        for (int accR = 0; accR < rDim; accR++) {
+            for (int accPhi = 0; accPhi < phiDim; accPhi++) {
+            // compute current index in the accumulator
+                int idx = (accPhi + 1) * (rDim + 2) + accR + 1;
+                if (accumulator[idx] > minVotes) {
+                    
+                    boolean bestCandidate=true;
+                    
+                    // iterate over the neighbourhood
+                    for(int dPhi=-neighbourhood/2; dPhi < neighbourhood/2+1; dPhi++) { 
+                        // check we are not outside the image
+                        if( accPhi+dPhi < 0 || accPhi+dPhi >= phiDim) continue;
+                        for(int dR=-neighbourhood/2; dR < neighbourhood/2 +1; dR++) {
+                            // check we are not outside the image
+                            if(accR+dR < 0 || accR+dR >= rDim) continue;
+                            
+                            int neighbourIdx = (accPhi + dPhi + 1) * (rDim + 2) + accR + dR + 1;
+                            if(accumulator[idx] < accumulator[neighbourIdx]) {
+                                // the current idx is not a local maximum! bestCandidate=false;
+                                break;
+                            }
+                        }
+                        if(!bestCandidate) break;
                     }
-                    else
-                        line(x2, y2, x3, y3);
+                    if(bestCandidate) {
+                        // the current idx *is* a local maximum
+                        bestCandidates.add(idx);
+                    }
                 }
+            }
+        }
+
+        Collections.sort(bestCandidates, new HoughComparator(accumulator));
+
+        ArrayList<PVector> canditateVectors = new ArrayList<PVector>();
+
+        for(int idx : bestCandidates.subList(0, nLines)) {
+            int accPhi = (int) (idx / (rDim + 2)) - 1;
+            int accR = idx - (accPhi + 1) * (rDim + 2) -1;
+            float r = (accR - (rDim - 1) * 0.5f) * discretizationStepsR;
+            float phi = accPhi * discretizationStepsPhi;
+
+            canditateVectors.add(new PVector(r, phi));
+        }
+
+        return canditateVectors;
+    }
+
+    public ArrayList<PVector> getIntersections(List<PVector> lines) {
+        ArrayList<PVector> intersections = new ArrayList<PVector>();
+
+        for (int i = 0; i < lines.size() - 1; i++) {
+            PVector line1 = lines.get(i);
+            
+            for (int j = i + 1; j < lines.size(); j++) {
+                PVector line2 = lines.get(j);
+                
+                // compute the intersection and add it to 'intersections'
+                float d = cos(line2.y) * sin(line1.y) - cos(line1.y) * sin(line2.y);
+                float x = (line2.x * sin(line1.y) - line1.x * sin(line2.y)) / d;
+                float y = (-line2.x * cos(line1.y) + line1.x * cos(line2.y)) / d;
+
+                intersections.add(new PVector(x, y));
+                // draw the intersection
+                fill(255, 128, 0);
+                ellipse(x, y, 10, 10);
+            }
+        }
+        return intersections;
+    }
+
+
+    public void plotLines(PImage edges, ArrayList<PVector> vertices) {
+
+        for (PVector vertex : vertices) {
+            float phi = vertex.y, r = vertex.x;
+
+            int x0 = 0;
+            int y0 = (int) (r / sin(phi));
+            int x1 = (int) (r / cos(phi));
+            int y1 = 0;
+            int x2 = edges.width;
+            int y2 = (int) (-cos(phi) / sin(phi) * x2 + r / sin(phi));
+            int y3 = edges.width;
+            int x3 = (int) (- (y3 - r / sin(phi)) * (sin(phi) / cos(phi)));
+
+            stroke(204, 102, 0);
+
+            if (y0 > 0) {
+                if (x1 > 0)
+                    line(x0, y0, x1, y1);
+                else if (y2 > 0)
+                    line(x0, y0, x2, y2);
+                else
+                    line (x0, y0, x3, y3);
+            }
+            else {
+                if (x1 > 0) {
+                    if (y2 > 0)
+                        line(x1, y1, x2, y2);
+                    else
+                        line(x1, y1, x3, y3);
+                }
+                else
+                    line(x2, y2, x3, y3);
             }
         }
         //h.updatePixels();
