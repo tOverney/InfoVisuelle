@@ -227,7 +227,7 @@ public class QuadGraph {
         Boolean isConv = (i1>0 && i2>0 && i3>0 && i4>0) 
            || (i1<0 && i2<0 && i3<0 && i4<0);
 
-        if(!isConv) System.out.println("not convex!");
+        //if(!isConv) System.out.println("not convex!");
 
         return isConv;
    
@@ -253,31 +253,33 @@ public class QuadGraph {
         
         boolean valid = (area < max_area && area > min_area);
    
-        if (!valid) System.out.println("Area out of range");
+        //if (!valid) System.out.println("Area out of range");
         
         return valid;
    }
   
-    /** Compute the (cosine) of the four angles of the quad, and check they are all large enough
+    /** Compute the (cosine) of the four angles of the quad, and check they are
+     * all large enough
      * (the quad representing our board should be close to a rectangle)
      */
-    public static boolean nonFlatQuad(PVector c1,PVector c2,PVector c3,PVector c4){
+    public static boolean nonFlatQuad(PVector c1, PVector c2, 
+        PVector c3, PVector c4){
         
         // cos(70deg) ~= 0.3
-        float min_cos = 0.3f;
+        float min_cos = 0.8f;
         
-        PVector v21= PVector.sub(c1, c2);
-        PVector v32= PVector.sub(c2, c3);
-        PVector v43= PVector.sub(c3, c4);
-        PVector v14= PVector.sub(c4, c1);
+        PVector v21 = PVector.sub(c1, c2);
+        PVector v32 = PVector.sub(c2, c3);
+        PVector v43 = PVector.sub(c3, c4);
+        PVector v14 = PVector.sub(c4, c1);
   
-        float cos1=Math.abs(v21.dot(v32) / (v21.mag() * v32.mag()));
-        float cos2=Math.abs(v32.dot(v43) / (v32.mag() * v43.mag()));
-        float cos3=Math.abs(v43.dot(v14) / (v43.mag() * v14.mag()));
-        float cos4=Math.abs(v14.dot(v21) / (v14.mag() * v21.mag()));
+        float cos1 = Math.abs(v21.dot(v32) / (v21.mag() * v32.mag()));
+        float cos2 = Math.abs(v32.dot(v43) / (v32.mag() * v43.mag()));
+        float cos3 = Math.abs(v43.dot(v14) / (v43.mag() * v14.mag()));
+        float cos4 = Math.abs(v14.dot(v21) / (v14.mag() * v21.mag()));
     
-        return (cos1 < min_cos && cos2 < min_cos
-            && cos3 < min_cos && cos4 < min_cos);
+        return cos1 < min_cos && cos2 < min_cos
+            && cos3 < min_cos && cos4 < min_cos;
    }
     
 

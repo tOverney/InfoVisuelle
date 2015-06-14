@@ -21,6 +21,8 @@ public class Game extends PApplet {
     PVector bufferedRotation = new PVector(0.0f, 0.0f, 0.0f);
     float angularSpeed = radians(1);
     boolean running = true;
+    boolean isBoardCtrl = true;
+    CamerHandler camerHandler;
 
     public static void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "Game" };
@@ -36,6 +38,7 @@ public class Game extends PApplet {
         noStroke();
         field = new GameField(FIELD_DIMENSION, FIELD_THICKNESS);
         sphere = new Sphere(SPHERE_RADIUS);
+        camerHandler = new CamerHandler(this, "assets/testvideo.mp4");
         loadCylinderModel();
     }
 
@@ -50,6 +53,9 @@ public class Game extends PApplet {
             camera(0, -SIDE_VIEW, 0, 0, 0, 0, 0, 0, 1);
         }
 
+        if (isBoardCtrl) {
+            rotation = camerHandler.currentRotation();
+        }
         rotate();
 
         if(running) {
@@ -68,7 +74,8 @@ public class Game extends PApplet {
 
     public void rotate() {
         rotateX(rotation.x);
-        rotateZ(rotation.z);}
+        rotateZ(rotation.z);
+    }
 
 
 /**
@@ -76,7 +83,7 @@ public class Game extends PApplet {
  *
  */
     public void mouseDragged() {
-        if(running) {
+        if(running && !isBoardCtrl) {
             float delta = pmouseX - mouseX;
             rotation.z = updateAngle(delta, rotation.z);
             delta = pmouseY - mouseY;
@@ -112,6 +119,10 @@ public class Game extends PApplet {
             running = false;
             bufferedRotation = rotation;
             rotation = new PVector(0, 0, 0);
+            break;
+
+            case CONTROL :
+            isBoardCtrl = !isBoardCtrl;
             break;
         }
     }
@@ -174,7 +185,7 @@ public class Game extends PApplet {
     private PShape msTreeModel;
 
     public void loadCylinderModel() {
-        msTreeModel = loadShape("tree.obj");
+        msTreeModel = loadShape("assets/tree.obj");
         msTreeModel.scale(10);
         msTreeModel.rotateZ(PI);
     }

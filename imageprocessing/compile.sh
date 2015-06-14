@@ -12,6 +12,7 @@ fi
 if [ $1 ]; then
     procLib=$1
 fi
+procLib+=":../libraries/*"
 
 javac -classpath $procLib -g -d $outputdir *.java
 java -classpath $procLib:$outputdir ImageProcessing

@@ -5,6 +5,7 @@ import processing.opengl.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 
@@ -85,11 +86,15 @@ public class ImageProcessing extends PApplet {
         translate(2 * imgWidth, 0);
         qGraph.build(candidates, sobel.width, sobel.height);
         List<int[]> quadsRaw = qGraph.findCycles();
-        ArrayList<PVector[]> quads = buildCleanQuadList(candidates, quadsRaw);
-        // displayQuads(quads); // uncomment if you want to see the quads!
+        ArrayList<List<PVector>> quads = buildCleanQuadList(candidates, quadsRaw);
+        displayQuads(quads); // uncomment if you want to see the quads!
 
-        getIntersections(candidates);
-        plotLines(sobel, candidates);
+        // getIntersections(candidates);
+        // plotLines(sobel, candidates);
+
+        TwoDThreeD rotationSolver = new TwoDThreeD(imgWidth, imgHeight);
+        PVector r = rotationSolver.get3DRotations(quads.get(0));
+        System.out.println(r);
     }
 
     public PImage sobel(PImage img) {
@@ -266,8 +271,10 @@ public class ImageProcessing extends PApplet {
         return new PVector(x, y);
     }
 
-    public ArrayList<PVector[]> buildCleanQuadList(ArrayList<PVector> lines, List<int[]> quads) {
-        ArrayList<PVector[]> cleanedQuads = new ArrayList<PVector[]>();
+    public ArrayList<List<PVector>> buildCleanQuadList(ArrayList<PVector> lines,
+        List<int[]> quads) {
+
+        ArrayList<List<PVector>> cleanedQuads = new ArrayList<List<PVector>>();
 
         for (int[] quad : quads) {
             if(quad.length == 4) {
@@ -283,27 +290,31 @@ public class ImageProcessing extends PApplet {
                 PVector c34 = intersection(l3, l4);
                 PVector c41 = intersection(l4, l1);
 
-                /* there is a problem with these method calls ... 
+                // there is a problem with these method calls ... 
                 if(qGraph.isConvex(c12, c23, c34, c41) &&
-                    qGraph.nonFlatQuad(c12, c23, c34, c41)) { */
-                PVector[] validQuad = {c12, c23, c34, c41}; 
-                cleanedQuads.add(validQuad);
+                    qGraph.validArea(c12, c23, c34, c41, 700000000, 50000) &&
+                    qGraph.nonFlatQuad(c12, c23, c34, c41)) {
+                    List<PVector> validQuad = new ArrayList<PVector>(
+                        Arrays.asList(c12, c23, c34, c41)); 
+                    cleanedQuads.add(validQuad);
+                }
             }
         }
 
         return cleanedQuads;
     } 
 
-    public void displayQuads(ArrayList<PVector[]> quads) {
-        for (PVector[] quad : quads) {
+    public void displayQuads(ArrayList<List<PVector>> quads) {
+        //for (List<PVector> quad : quads) {
+        List<PVector> quad = quads.get(0);
             // Choose a random, semi-transparent colour
             Random random = new Random();
             fill(color(min(255, random.nextInt(300)),
                 min(255, random.nextInt(300)),
                 min(255, random.nextInt(300)), 50));
-            quad(quad[0].x, quad[0].y, quad[1].x, quad[1].y,
-                 quad[2].x, quad[2].y, quad[3].x, quad[3].y);
-        }
+            quad(quad.get(0).x, quad.get(0).y, quad.get(1).x, quad.get(1).y,
+                 quad.get(2).x, quad.get(2).y, quad.get(3).x, quad.get(3).y);
+        //}
     }
 
 
