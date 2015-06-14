@@ -53,7 +53,7 @@ public class Game extends PApplet {
             camera(0, -SIDE_VIEW, 0, 0, 0, 0, 0, 0, 1);
         }
 
-        if (isBoardCtrl) {
+        if (isBoardCtrl && running) {
             rotation = camerHandler.currentRotation();
         }
         rotate();

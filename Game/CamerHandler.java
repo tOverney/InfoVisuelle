@@ -37,6 +37,7 @@ public class CamerHandler {
         cam = new Movie(prnt, videoPath);
         parent = prnt;
         cam.loop();
+        cam.read();
         qGraph = new QuadGraph();
         rotX = new AtomicInteger(0);
         rotZ = new AtomicInteger(0);
@@ -85,7 +86,7 @@ public class CamerHandler {
     }
 
     private List<PVector> processImageToQuad(PImage source){
-        PImage sobel;
+        PImage sobel = parent.createImage(source.width, source.height, parent.ALPHA);
 
         sobel = hueThreshold(source);
         sobel = gaussianBlur(sobel);
@@ -310,7 +311,9 @@ public class CamerHandler {
 
         ArrayList<PVector> canditateVectors = new ArrayList<PVector>();
 
-        for(int idx : bestCandidates.subList(0, nLines)) {
+        for(int idx : bestCandidates.subList(0,
+            parent.min(nLines, bestCandidates.size()))) {
+
             int accPhi = (int) (idx / (rDim + 2)) - 1;
             int accR = idx - (accPhi + 1) * (rDim + 2) -1;
             float r = (accR - (rDim - 1) * 0.5f) * discretizationStepsR;

@@ -28,8 +28,8 @@ if [ $1 ]; then
 fi
 procLib+=":../libraries/*"
 
-argRun='-Dgstreamer.library.path="'$pathToMainFolder'modes/java/libraries/video/library/macosx64"'
-argRun+=' -Dgstreamer.plugin.path="'$pathToMainFolder'modes/java/libraries/video/library/macosx64/plugins"'
+# argRun='-Dgstreamer.library.path="'$pathToMainFolder'modes/java/libraries/video/library/macosx64"'
+# argRun+=' -Dgstreamer.plugin.path="'$pathToMainFolder'modes/java/libraries/video/library/macosx64/plugins"'
 
 if [ $2 ]; then
     argRun=$2
@@ -38,4 +38,4 @@ fi
 echo $argRun
 
 javac -classpath $procLib -g -d $outputdir *.java
-java -classpath $procLib:$outputdir $argRun Game
+java -classpath $procLib:$outputdir Game
